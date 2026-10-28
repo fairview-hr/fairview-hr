@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>FairView</title>
+<title>Interview Scorecard – ให้คะแนนสัมภาษณ์ผ่านมือถือ</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 /* ===== ส่วนที่ 1: สีและฟอนต์ (แก้สีทั้งเว็บได้ที่นี่) ===== */
@@ -44,8 +44,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 </head>
 <body>
 <main>
-<h1>FairView</h1>
-<p class="sub">เว็บแอปพลิเคชันสำหรับงานสัมภาษณ์ในกระบวนการสรรหาบุคลากร HR ช่วยให้กรรมการให้คะแนนแยกกันตามเกณฑ์เดียวกัน ระบบรวมผลและจัดอันดับให้อัตโนมัติผ่านเว็บเบราว์เซอร์</p>
+<h1>Interview Scorecard</h1>
+<p class="sub">ให้คะแนนผู้สมัครด้วยเกณฑ์เดียวกัน กรรมการให้คะแนนแยกกัน แล้วระบบรวมผลให้</p>
 
 <div class="tabs" role="tablist">
   <button role="tab" id="tb0" aria-selected="true">1 ตั้งค่า</button>
@@ -97,7 +97,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <!-- ===== หน้า 3: ผลรวม ===== -->
 <section id="p2" class="hide">
   <div class="panel"><h2>อันดับผู้สมัคร</h2><div id="result"></div></div>
-  <button class="ghost" onclick="window.print()">พิมพ์ / บันทึกเป็น PDF</button>
+  <button class="ghost" id="copyBtn">คัดลอกสรุปผล (วางใน LINE / เอกสารได้)</button>
+  <button class="ghost" id="csvBtn">ดาวน์โหลดผลเป็นไฟล์ CSV (เปิดใน Excel)</button>
+  <button class="ghost" onclick="window.print()">พิมพ์ / บันทึกเป็น PDF (ใช้บนคอมพิวเตอร์)</button>
+  <p class="note" id="exMsg"></p>
 </section>
 </main>
 
@@ -166,8 +169,8 @@ function total(r){ // คะแนนถ่วงน้ำหนัก ได้
   var w=S.crit.reduce(function(a,c){return a+c.w},0)||1,t=0;
   S.crit.forEach(function(c,i){t+=(r[i]||0)*c.w});return t/w;
 }
-function drawResult(){
-  var rows=S.cands.map(function(c){
+function calcRows(){ // คำนวณผลของผู้สมัครทุกคน (ใช้ทั้งแสดงผลและส่งออกไฟล์)
+  return S.cands.map(function(c){
     var ent=S.judges.map(function(j){return S.scores[c+"|"+j]}).filter(Boolean);
     if(!ent.length)return{c:c,n:0};
     var tots=ent.map(function(e){return total(e.r)});
@@ -176,6 +179,9 @@ function drawResult(){
     var ca=S.crit.map(function(x,i){return ent.reduce(function(a,e){return a+(e.r[i]||0)},0)/ent.length});
     return{c:c,n:ent.length,avg:avg,gap:gap,ca:ca,notes:ent.map(function(e){return e.note}).filter(Boolean)};
   }).sort(function(a,b){return (b.avg||0)-(a.avg||0)});
+}
+function drawResult(){
+  var rows=calcRows();
   if(!rows.length||!rows.some(function(r){return r.n})){$("result").innerHTML='<p class="note">ยังไม่มีคะแนน ไปหน้า "ให้คะแนน" หรือกด "โหลดข้อมูลตัวอย่าง" ในหน้าตั้งค่า</p>';return}
   $("result").innerHTML=rows.map(function(r,i){
     if(!r.n)return '<div class="rank"><span class="pos">-</span><b>'+esc(r.c)+'</b><span class="note">ยังไม่มีคะแนน</span></div>';
@@ -186,6 +192,30 @@ function drawResult(){
     return '<div class="rank"><span class="pos">'+(i+1)+'</span><b>'+esc(r.c)+'</b><span class="big">'+pct+'</span><div class="bar"><i style="width:'+pct+'%"></i></div><div class="sum">'+tags+'<br>'+sum+'</div></div>';
   }).join("");
 }
+
+/* ===== ส่วนที่ 6.5: ส่งออกผล (ใช้แทนการพิมพ์ PDF บนมือถือ) ===== */
+function scored(){return calcRows().filter(function(r){return r.n})}
+function summaryText(){
+  var t="ผลสัมภาษณ์ตำแหน่ง: "+$("pos").value+"\n";
+  scored().forEach(function(r,i){t+=(i+1)+". "+r.c+" - "+Math.round(r.avg/5*100)+"/100 (กรรมการ "+r.n+" คน)\n"});
+  return t;
+}
+$("copyBtn").onclick=function(){
+  var t=summaryText();
+  if(!scored().length){$("exMsg").textContent="ยังไม่มีคะแนนให้คัดลอก";return}
+  if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){$("exMsg").textContent="คัดลอกแล้ว นำไปวางได้เลย"}).catch(function(){window.prompt("คัดลอกข้อความนี้",t)})}
+  else window.prompt("คัดลอกข้อความนี้",t);
+};
+$("csvBtn").onclick=function(){
+  var rs=scored();
+  if(!rs.length){$("exMsg").textContent="ยังไม่มีคะแนนให้ดาวน์โหลด";return}
+  var csv="อันดับ,ผู้สมัคร,คะแนนเต็ม100,จำนวนกรรมการ\n";
+  rs.forEach(function(r,i){csv+=(i+1)+',"'+r.c.replace(/"/g,'""')+'",'+Math.round(r.avg/5*100)+","+r.n+"\n"});
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));
+  a.download="interview-result.csv";document.body.appendChild(a);a.click();a.remove();
+  $("exMsg").textContent="ดาวน์โหลดแล้ว (ดูในโฟลเดอร์ Downloads ของเครื่อง)";
+};
 
 /* ===== ส่วนที่ 7: ข้อมูลตัวอย่างสำหรับสาธิต ===== */
 $("demo").onclick=function(){
