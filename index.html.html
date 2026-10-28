@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FairView</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* ===== ส่วนที่ 1: สีและฟอนต์ (แก้สีทั้งเว็บได้ที่นี่) ===== */
+:root{--bg:#f5f5fb;--card:#fff;--ink:#1d1f3b;--mute:#62657f;--line:#dcdcee;--accent:#4a4fd0;--accent-ink:#fff;--ok:#0f7b4f;--okbg:#dff3ea;--warn:#8a5a00;--warnbg:#fdf0cf;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12132a;--card:#1c1e3d;--ink:#ebebfa;--mute:#a3a6c6;--line:#34376a;--accent:#9ea2ff;--accent-ink:#12132a;--ok:#6fdba9;--okbg:#12362a;--warn:#f0c36a;--warnbg:#3a2e12}}
+:root[data-theme="dark"]{--bg:#12132a;--card:#1c1e3d;--ink:#ebebfa;--mute:#a3a6c6;--line:#34376a;--accent:#9ea2ff;--accent-ink:#12132a;--ok:#6fdba9;--okbg:#12362a;--warn:#f0c36a;--warnbg:#3a2e12}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans Thai",system-ui,sans-serif;line-height:1.6}
+main{max-width:720px;margin:0 auto;padding:18px 16px 48px}
+h1{font-size:1.5rem;font-weight:800;margin:0}h2{font-size:1.05rem;margin:0 0 8px}
+.sub{color:var(--mute);margin:2px 0 14px;font-size:.92rem}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tabs button{flex:1;margin:0;background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.tabs button[aria-selected=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+label{display:block;font-weight:600;margin:10px 0 4px;font-size:.9rem}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+input[type=range]{padding:0;accent-color:var(--accent)}
+button{font:inherit;font-weight:600;background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 14px;cursor:pointer;margin-top:10px}
+button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.row{display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 6px 3px 12px;font-size:.88rem}
+.chip b{cursor:pointer;padding:0 6px;color:var(--mute)}
+.crit{margin:12px 0}.crit .top{display:flex;justify-content:space-between;font-weight:600}
+.big{font-size:1.4rem;font-weight:800}
+.rank{display:grid;grid-template-columns:auto 1fr auto;gap:2px 12px;padding:12px 0;border-top:1px solid var(--line)}
+.rank:first-of-type{border-top:0}
+.pos{font-size:1.5rem;font-weight:800;color:var(--accent);grid-row:span 2}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;grid-column:2/4}.bar i{display:block;height:100%;background:var(--accent)}
+.tag{display:inline-block;font-size:.82rem;padding:3px 9px;border-radius:6px;margin:6px 6px 0 0}
+.t-ok{background:var(--okbg);color:var(--ok)}.t-warn{background:var(--warnbg);color:var(--warn)}
+.sum{grid-column:1/-1;font-size:.88rem;color:var(--mute);margin-top:6px}
+.hide{display:none}.note{font-size:.84rem;color:var(--mute)}
+@media print{.tabs,button{display:none}}
+</style>
+</head>
+<body>
+<main>
+<h1>FairView</h1>
+<p class="sub">เว็บแอปพลิเคชันสำหรับงานสัมภาษณ์ในกระบวนการสรรหาบุคลากร HR ช่วยให้กรรมการให้คะแนนแยกกันตามเกณฑ์เดียวกัน ระบบรวมผลและจัดอันดับให้อัตโนมัติผ่านเว็บเบราว์เซอร์</p>
+
+<div class="tabs" role="tablist">
+  <button role="tab" id="tb0" aria-selected="true">1 ตั้งค่า</button>
+  <button role="tab" id="tb1" aria-selected="false">2 ให้คะแนน</button>
+  <button role="tab" id="tb2" aria-selected="false">3 ผลรวม</button>
+</div>
+
+<!-- ===== หน้า 1: HR ตั้งค่า ===== -->
+<section id="p0">
+  <div class="panel">
+    <h2>ตำแหน่งที่สัมภาษณ์</h2>
+    <input id="pos" value="เจ้าหน้าที่ทรัพยากรบุคคล" aria-label="ชื่อตำแหน่ง">
+  </div>
+  <div class="panel">
+    <h2>เกณฑ์และน้ำหนัก (%)</h2>
+    <div id="critBox"></div>
+    <button class="ghost" id="addCrit">+ เพิ่มเกณฑ์</button>
+    <p class="note" id="wSum"></p>
+  </div>
+  <div class="panel">
+    <h2>ผู้สมัคร</h2>
+    <input id="newCand" placeholder="พิมพ์ชื่อแล้วกดเพิ่ม">
+    <button id="addCand">เพิ่มผู้สมัคร</button>
+    <div class="chips" id="candChips"></div>
+  </div>
+  <div class="panel">
+    <h2>กรรมการ</h2>
+    <input id="newJudge" placeholder="พิมพ์ชื่อแล้วกดเพิ่ม">
+    <button id="addJudge">เพิ่มกรรมการ</button>
+    <div class="chips" id="judgeChips"></div>
+  </div>
+  <button class="ghost" id="demo">โหลดข้อมูลตัวอย่างสำหรับสาธิต</button>
+</section>
+
+<!-- ===== หน้า 2: กรรมการให้คะแนน ===== -->
+<section id="p1" class="hide">
+  <div class="panel">
+    <label for="selJudge">กรรมการ</label><select id="selJudge"></select>
+    <label for="selCand">ผู้สมัคร</label><select id="selCand"></select>
+    <div id="sliders"></div>
+    <label for="note">บันทึกสั้นๆ</label>
+    <textarea id="note" rows="3" placeholder="เช่น ยกตัวอย่างงานเก่าได้ชัดเจน"></textarea>
+    <button id="save">บันทึกคะแนน</button>
+    <p class="note" id="saved"></p>
+  </div>
+  <p class="note">กรรมการแต่ละคนมองไม่เห็นคะแนนของคนอื่น จนกว่าจะเปิดหน้า "ผลรวม"</p>
+</section>
+
+<!-- ===== หน้า 3: ผลรวม ===== -->
+<section id="p2" class="hide">
+  <div class="panel"><h2>อันดับผู้สมัคร</h2><div id="result"></div></div>
+  <button class="ghost" onclick="window.print()">พิมพ์ / บันทึกเป็น PDF</button>
+</section>
+</main>
+
+<script>
+/* ===== ส่วนที่ 2: ข้อมูลของระบบ (เก็บในหน่วยความจำ รีเฟรชแล้วรีเซ็ต) ===== */
+var S={
+  crit:[{n:"ความรู้ความสามารถในงาน",w:30},{n:"การสื่อสาร",w:25},{n:"การแก้ปัญหา",w:25},{n:"ความเหมาะสมกับทีม",w:20}],
+  cands:["ตัวอย่าง ผู้สมัคร A"],
+  judges:["กรรมการ 1","กรรมการ 2"],
+  scores:{}   // รูปแบบ: scores["ชื่อผู้สมัคร|ชื่อกรรมการ"] = {r:[คะแนนแต่ละเกณฑ์], note:"..."}
+};
+function $(id){return document.getElementById(id)}
+function esc(t){var d=document.createElement("div");d.textContent=t;return d.innerHTML}
+
+/* ===== ส่วนที่ 3: สลับแท็บ ===== */
+function show(i){
+  for(var k=0;k<3;k++){$("p"+k).classList.toggle("hide",k!==i);$("tb"+k).setAttribute("aria-selected",k===i)}
+  if(i===1)drawScore(); if(i===2)drawResult();
+}
+[0,1,2].forEach(function(i){$("tb"+i).onclick=function(){show(i)}});
+
+/* ===== ส่วนที่ 4: หน้าตั้งค่า ===== */
+function drawSetup(){
+  $("critBox").innerHTML=S.crit.map(function(c,i){
+    return '<div class="row"><input data-n="'+i+'" value="'+esc(c.n).replace(/"/g,"&quot;")+'" aria-label="ชื่อเกณฑ์"><input data-w="'+i+'" type="number" min="0" max="100" value="'+c.w+'" aria-label="น้ำหนัก"></div>'}).join("");
+  document.querySelectorAll("[data-n]").forEach(function(e){e.oninput=function(){S.crit[e.dataset.n].n=e.value}});
+  document.querySelectorAll("[data-w]").forEach(function(e){e.oninput=function(){S.crit[e.dataset.w].w=+e.value||0;wsum()}});
+  chips("candChips","cands");chips("judgeChips","judges");wsum();
+}
+function wsum(){var t=S.crit.reduce(function(a,c){return a+c.w},0);$("wSum").textContent="น้ำหนักรวม "+t+"% "+(t===100?"(ครบ 100%)":"(ควรรวมเป็น 100%)")}
+function chips(boxId,key){
+  $(boxId).innerHTML=S[key].map(function(n,i){return '<span class="chip">'+esc(n)+'<b data-k="'+key+'" data-i="'+i+'" role="button" aria-label="ลบ">×</b></span>'}).join("");
+  $(boxId).querySelectorAll("b").forEach(function(b){b.onclick=function(){S[b.dataset.k].splice(b.dataset.i,1);drawSetup()}});
+}
+$("addCrit").onclick=function(){S.crit.push({n:"เกณฑ์ใหม่",w:0});drawSetup()};
+$("addCand").onclick=function(){var v=$("newCand").value.trim();if(v){S.cands.push(v);$("newCand").value="";drawSetup()}};
+$("addJudge").onclick=function(){var v=$("newJudge").value.trim();if(v){S.judges.push(v);$("newJudge").value="";drawSetup()}};
+
+/* ===== ส่วนที่ 5: หน้าให้คะแนน ===== */
+function opts(arr){return arr.map(function(n,i){return '<option value="'+i+'">'+esc(n)+'</option>'}).join("")}
+function drawScore(){
+  var j0=$("selJudge").value,c0=$("selCand").value;
+  $("selJudge").innerHTML=opts(S.judges);$("selCand").innerHTML=opts(S.cands);
+  if(j0)$("selJudge").value=j0; if(c0)$("selCand").value=c0;
+  loadForm();
+}
+function key(){return S.cands[$("selCand").value]+"|"+S.judges[$("selJudge").value]}
+function loadForm(){
+  var old=S.scores[key()]||{r:[],note:""};
+  $("sliders").innerHTML=S.crit.map(function(c,i){
+    var v=old.r[i]||3;
+    return '<div class="crit"><div class="top"><span>'+esc(c.n)+' <span class="note">('+c.w+'%)</span></span><span class="big" id="v'+i+'">'+v+'</span></div><input type="range" min="1" max="5" step="1" value="'+v+'" data-s="'+i+'" aria-label="'+esc(c.n)+'"></div>'}).join("");
+  document.querySelectorAll("[data-s]").forEach(function(e){e.oninput=function(){$("v"+e.dataset.s).textContent=e.value}});
+  $("note").value=old.note;$("saved").textContent=old.r.length?"บันทึกแล้ว":"";
+}
+$("selJudge").onchange=loadForm;$("selCand").onchange=loadForm;
+$("save").onclick=function(){
+  if(!S.cands.length||!S.judges.length){$("saved").textContent="กรุณาเพิ่มผู้สมัครและกรรมการในหน้าตั้งค่าก่อน";return}
+  var r=[];document.querySelectorAll("[data-s]").forEach(function(e){r.push(+e.value)});
+  S.scores[key()]={r:r,note:$("note").value.trim()};
+  $("saved").textContent="บันทึกแล้ว: "+S.judges[$("selJudge").value]+" ให้คะแนน "+S.cands[$("selCand").value];
+};
+
+/* ===== ส่วนที่ 6: คำนวณและแสดงผลรวม ===== */
+function total(r){ // คะแนนถ่วงน้ำหนัก ได้ค่า 1-5
+  var w=S.crit.reduce(function(a,c){return a+c.w},0)||1,t=0;
+  S.crit.forEach(function(c,i){t+=(r[i]||0)*c.w});return t/w;
+}
+function drawResult(){
+  var rows=S.cands.map(function(c){
+    var ent=S.judges.map(function(j){return S.scores[c+"|"+j]}).filter(Boolean);
+    if(!ent.length)return{c:c,n:0};
+    var tots=ent.map(function(e){return total(e.r)});
+    var avg=tots.reduce(function(a,b){return a+b},0)/tots.length;
+    var gap=Math.max.apply(0,tots)-Math.min.apply(0,tots);
+    var ca=S.crit.map(function(x,i){return ent.reduce(function(a,e){return a+(e.r[i]||0)},0)/ent.length});
+    return{c:c,n:ent.length,avg:avg,gap:gap,ca:ca,notes:ent.map(function(e){return e.note}).filter(Boolean)};
+  }).sort(function(a,b){return (b.avg||0)-(a.avg||0)});
+  if(!rows.length||!rows.some(function(r){return r.n})){$("result").innerHTML='<p class="note">ยังไม่มีคะแนน ไปหน้า "ให้คะแนน" หรือกด "โหลดข้อมูลตัวอย่าง" ในหน้าตั้งค่า</p>';return}
+  $("result").innerHTML=rows.map(function(r,i){
+    if(!r.n)return '<div class="rank"><span class="pos">-</span><b>'+esc(r.c)+'</b><span class="note">ยังไม่มีคะแนน</span></div>';
+    var pct=Math.round(r.avg/5*100);
+    var st=[],cn=[];r.ca.forEach(function(v,k){if(v>=4)st.push(S.crit[k].n);if(v<=2.5)cn.push(S.crit[k].n)});
+    var tags=(r.gap>=1.5?'<span class="tag t-warn">กรรมการให้คะแนนต่างกันมาก ควรคุยกัน</span>':'')+(r.n<S.judges.length?'<span class="tag t-warn">กรรมการให้คะแนนแล้ว '+r.n+'/'+S.judges.length+'</span>':'<span class="tag t-ok">ครบทุกกรรมการ</span>');
+    var sum=(st.length?'จุดเด่น: '+esc(st.join(", "))+'. ':'')+(cn.length?'ควรระวัง: '+esc(cn.join(", "))+'. ':'')+(r.notes.length?'บันทึก: '+esc(r.notes.join(" / ")):'');
+    return '<div class="rank"><span class="pos">'+(i+1)+'</span><b>'+esc(r.c)+'</b><span class="big">'+pct+'</span><div class="bar"><i style="width:'+pct+'%"></i></div><div class="sum">'+tags+'<br>'+sum+'</div></div>';
+  }).join("");
+}
+
+/* ===== ส่วนที่ 7: ข้อมูลตัวอย่างสำหรับสาธิต ===== */
+$("demo").onclick=function(){
+  S.cands=["นภัสสร วงศ์ทอง","ธนากร แสงเงิน","พิมพ์ชนก รัตนา"];
+  S.judges=["กรรมการ 1","กรรมการ 2","กรรมการ 3"];
+  var d={
+    "นภัสสร วงศ์ทอง":[[5,4,5,4,"ยกตัวอย่างงานเก่าได้ชัดเจน"],[4,5,4,4,"สื่อสารมั่นใจ"],[5,4,4,5,""]],
+    "ธนากร แสงเงิน":[[4,3,4,3,"คิดวิเคราะห์ดี แต่ตอบยังไม่กระชับ"],[2,3,2,4,"ขาดประสบการณ์ด้านกฎหมายแรงงาน"],[3,3,3,4,""]],
+    "พิมพ์ชนก รัตนา":[[5,5,4,5,"เข้ากับทีมได้ดี"],[2,2,3,3,"ตอบคำถามเชิงลึกไม่ได้"],[3,3,3,3,""]]};
+  S.scores={};
+  Object.keys(d).forEach(function(c){d[c].forEach(function(a,j){S.scores[c+"|"+S.judges[j]]={r:a.slice(0,4),note:a[4]}})});
+  drawSetup();show(2);
+};
+
+drawSetup();
+</script>
+</body>
+</html>
