@@ -180,6 +180,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   <div class="panel">
     <label for="selJudge">กรรมการ</label><select id="selJudge"></select>
     <label for="selCand">ผู้สมัคร</label><select id="selCand"></select>
+    <div id="docPanel" style="margin-top:16px;padding-top:6px;border-top:1px solid var(--line)">
+      <label for="docLink">ผลงานของผู้สมัคร: วางลิงก์ (Google Drive / Canva ฯลฯ)</label>
+      <input type="text" id="docLink" placeholder="https://...">
+      <label for="docFile">หรือแนบไฟล์ PDF (เช่น portfolio)</label>
+      <input type="file" id="docFile" accept="application/pdf">
+      <div id="docView" style="margin-top:8px;font-size:.92rem"></div>
+      <p class="note">ไฟล์ PDF เปิดดูได้เฉพาะในเครื่องนี้ ไม่ถูกอัปโหลดไปที่ใด และจะหายเมื่อรีเฟรชหน้า</p>
+    </div>
     <div id="sliders"></div>
     <label for="note">บันทึกสั้นๆ</label>
     <textarea id="note" rows="3" placeholder="เช่น ยกตัวอย่างงานเก่าได้ชัดเจน"></textarea>
@@ -250,6 +258,7 @@ function loadForm(){
     return '<div class="crit"><div class="top"><span>'+esc(c.n)+' <span class="note">('+c.w+'%)</span></span><span class="big" id="v'+i+'">'+v+'</span></div><input type="range" min="1" max="5" step="1" value="'+v+'" data-s="'+i+'" aria-label="'+esc(c.n)+'"></div>'}).join("");
   document.querySelectorAll("[data-s]").forEach(function(e){e.oninput=function(){$("v"+e.dataset.s).textContent=e.value}});
   $("note").value=old.note;$("saved").textContent=old.r.length?"บันทึกแล้ว":"";
+  drawDocs();
 }
 $("selJudge").onchange=loadForm;$("selCand").onchange=loadForm;
 $("save").onclick=function(){
@@ -257,6 +266,41 @@ $("save").onclick=function(){
   var r=[];document.querySelectorAll("[data-s]").forEach(function(e){r.push(+e.value)});
   S.scores[key()]={r:r,note:$("note").value.trim()};
   $("saved").textContent="บันทึกแล้ว: "+S.judges[$("selJudge").value]+" ให้คะแนน "+S.cands[$("selCand").value];
+};
+
+/* ===== ส่วนที่ 5.5: แนบผลงานผู้สมัคร (ลิงก์ + ไฟล์ PDF ในเครื่อง) ===== */
+S.docs={}; // รูปแบบ: S.docs["ชื่อผู้สมัคร"] = {link:"...", url:"blob:...", fileName:"..."}
+function curCand(){return S.cands[$("selCand").value]}
+function renderDocs(){ // แสดงลิงก์สำหรับเปิดดูผลงานของผู้สมัครที่เลือกอยู่
+  var c=curCand(),d=S.docs[c]||{},box=$("docView");
+  box.textContent="";
+  if(!c)return;
+  function add(text,href){var a=document.createElement("a");a.textContent=text;a.href=href;a.target="_blank";a.rel="noopener";a.style.display="block";a.style.margin="4px 0";box.appendChild(a)}
+  if(d.link)add("เปิดลิงก์ผลงาน",d.link);
+  if(d.url)add("เปิดไฟล์ PDF: "+d.fileName,d.url);
+  if(!d.link&&!d.url)box.textContent="ยังไม่ได้แนบผลงานของผู้สมัครคนนี้";
+}
+function drawDocs(){ // เรียกตอนเปลี่ยนผู้สมัคร: ใส่ค่าลิงก์เดิมกลับในช่อง
+  var c=curCand(),d=S.docs[c]||{};
+  $("docLink").value=d.link||"";$("docFile").value="";
+  renderDocs();
+}
+$("docLink").oninput=function(){
+  var c=curCand(),v=this.value.trim();
+  if(!c)return;
+  S.docs[c]=S.docs[c]||{};
+  if(v&&!/^https?:\/\//i.test(v)){S.docs[c].link="";$("docView").textContent="ลิงก์ต้องขึ้นต้นด้วย http:// หรือ https://";return}
+  S.docs[c].link=v;renderDocs();
+};
+$("docFile").onchange=function(){
+  var f=this.files[0],c=curCand();
+  if(!f||!c)return;
+  if(f.type!=="application/pdf"&&!/\.pdf$/i.test(f.name)){$("docView").textContent="กรุณาเลือกไฟล์ PDF เท่านั้น";this.value="";return}
+  if(f.size>10*1024*1024){$("docView").textContent="ไฟล์ใหญ่เกิน 10 MB";this.value="";return}
+  var d=S.docs[c]=S.docs[c]||{};
+  if(d.url)URL.revokeObjectURL(d.url); // ล้างไฟล์เดิมออกจากหน่วยความจำ
+  d.url=URL.createObjectURL(f);d.fileName=f.name;
+  renderDocs();
 };
 
 /* ===== ส่วนที่ 6: คำนวณและแสดงผลรวม ===== */
